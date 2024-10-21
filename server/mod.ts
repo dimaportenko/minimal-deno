@@ -1,12 +1,12 @@
 import * as http from "https://deno.land/std@0.103.0/http/mod.ts";
 import * as path from "https://deno.land/std@0.103.0/path/mod.ts";
-import * as sucrase from "https://jspm.dev/sucrase@3.20.0";
+
+import { bundle } from "jsr:@deno/emit";
 
 const publicPath = path.resolve(
   path.dirname(path.fromFileUrl(import.meta.url)),
   "../public",
 );
-const textDecoder = new TextDecoder();
 
 const server = http.serve({ port: 8080 });
 
@@ -31,14 +31,20 @@ async function handleReq(req: http.ServerRequest) {
   }
 
   if (relPath.endsWith(".ts")) {
-    let buffer: Uint8Array;
+    console.log("transpiling", relPath);
     try {
-      buffer = await Deno.readFile(publicPath + relPath);
-
-      const tsCode = textDecoder.decode(buffer);
-      body = sucrase.transform(tsCode, { transforms: ["typescript"] }).code;
-    } catch {
-      return await req.respond({ status: 500, body: "Can't transform ts file" });
+      const result = await bundle(publicPath + relPath);
+      // console.log("transpiled", body);
+      return await req.respond({
+        headers: new Headers({ "content-type": "text/javascript" }),
+        body: result.code,
+      });
+    } catch (error) {
+      console.error("Transpilation error:", error);
+      return await req.respond({
+        status: 500,
+        body: "Can't transpile ts file",
+      });
     }
   }
 

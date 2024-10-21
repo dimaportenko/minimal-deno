@@ -1,5 +1,5 @@
 {
   "commands": {
-    "start": "deno run --watch --unstable --allow-net --allow-read --allow-import server/mod.ts"
+    "start": "deno run --watch --unstable --allow-net --allow-read --allow-import --allow-env server/mod.ts"
    }
 }
